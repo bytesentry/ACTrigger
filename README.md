@@ -6,10 +6,6 @@ ACTrigger is a real-time trigger and combat overlay for **Asheron's Call** that 
 
 Designed to work alongside Decal rather than replace it, ACTrigger focuses on providing information that's easy to see during combat while remaining lightweight and highly configurable.
 
-ACTrigger is a real-time trigger and combat overlay for **Asheron's Call** that combines a Decal plugin with a modern Avalonia UI. It provides configurable sound triggers, scrolling combat text, incoming damage notifications, and a debuff overlay that tracks the effects you apply to your current target.
-
-Designed to work alongside Decal rather than replace it, ACTrigger focuses on providing information that's easy to see during combat while remaining lightweight and highly configurable.
-
 ---
 
 # Features
