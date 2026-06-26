@@ -1,0 +1,49 @@
+<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:ACTrigger.UI.ViewModels"
+    x:DataType="vm:MainWindowViewModel"
+    x:Class="ACTrigger.UI.Views.SettingsWindow"
+    SizeToContent="WidthAndHeight"
+    Title="Settings">
+
+    <StackPanel
+        Margin="10"
+        Spacing="10">
+
+        <TextBlock
+            Text="ACTrigger Decal Plugin Folder"/>
+
+        <Grid
+            ColumnDefinitions="*,Auto"
+            ColumnSpacing="10">
+
+            <TextBox
+                Grid.Column="0"
+                Width="400"
+                Text="{Binding LogPath}" />
+
+            <Button
+                Grid.Column="1"
+                Content="Browse..."
+                Command="{Binding BrowseLogFileCommand}" />
+
+        </Grid>
+        <TextBlock
+            Text="{Binding PluginStatus}"
+            FontWeight="Bold"/>
+        <TextBlock
+            Text="Debuff Scale"/>
+
+        <ComboBox
+            Width="100"
+            ItemsSource="{Binding DebuffScaleOptions}"
+            SelectedItem="{Binding SelectedDebuffScale}">
+        </ComboBox>
+            <Button
+                Content="Done"
+                HorizontalAlignment="Center"
+                Click="Done_Click"/>
+    </StackPanel>
+
+</Window>

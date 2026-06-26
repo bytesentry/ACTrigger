@@ -1,0 +1,121 @@
+<Window xmlns="https://github.com/avaloniaui" 
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+        xmlns:vm="using:ACTrigger.UI.ViewModels"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:ACTrigger.UI.Controls"
+        mc:Ignorable="d"
+        x:Class="ACTrigger.UI.Views.DebuffWindow" 
+        x:DataType="vm:MainWindowViewModel" 
+        Width="240" 
+        Height="350" 
+        Topmost="True" 
+        ShowInTaskbar="False" 
+        WindowDecorations="None" 
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+
+    <Border x:Name="LayoutBorder"
+        Background="#66000000"
+        BorderBrush="White"
+        BorderThickness="1"
+        Padding="5"
+        RenderTransformOrigin="0,0">
+
+        <Border.RenderTransform>
+            <ScaleTransform
+                ScaleX="{Binding DebuffScale}"
+                ScaleY="{Binding DebuffScale}" />
+            </Border.RenderTransform>
+            <StackPanel> 
+                <TextBlock x:Name="OverlayLabel" 
+                        Text="Debuffs" 
+                        FontWeight="Bold" 
+                        Margin="0,0,0,5"/> 
+
+                <ItemsControl FontFamily="Times New Roman" 
+                            FontSize="18" 
+                            ItemsSource="{Binding DebuffGroups}"> 
+
+                    <ItemsControl.ItemTemplate> 
+                        <DataTemplate> 
+                            <StackPanel Margin="0,0,0,8"> 
+                                <Grid>
+
+                                    
+
+                                    <Button
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0"
+                                        HorizontalAlignment="Left"
+                                        Click="TargetName_Click">
+
+                                        <Button
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            HorizontalAlignment="Left"
+                                            Click="TargetName_Click">
+
+                                            <controls:OutlinedLabel
+                                                Text="{Binding TargetName}"
+                                                Fill="#E5D08A"
+                                                Outline="Black"
+                                                Thickness="2"/>
+
+                                        </Button>
+
+                                    </Button>
+
+                                </Grid>
+
+                                <ItemsControl ItemsSource="{Binding Debuffs}"> 
+                                    <ItemsControl.ItemTemplate> 
+                                        <DataTemplate>
+                                            <Grid Height="22" 
+                                                ColumnDefinitions="120,95" 
+                                                Margin="10,0,0,0"> 
+                                                
+                                                <controls:OutlinedLabel
+                                                    Grid.Column="0"
+                                                    Text="{Binding DisplayName}"
+                                                    Fill="#66DD66"
+                                                    Outline="Black"
+                                                    Thickness="1"
+                                                    FontSize="16"
+                                                    VerticalAlignment="Center"/>
+                                                
+                                                <Grid Grid.Column="1" 
+                                                    VerticalAlignment="Center"
+                                                    Width="50">
+                                                    <ProgressBar Minimum="0" 
+                                                                Maximum="100" 
+                                                                BorderBrush="Black" 
+                                                                BorderThickness="1" 
+                                                                Value="{Binding ProgressValue}" 
+                                                                Foreground="#8B6CE0" 
+                                                                Height="16"
+                                                                MinWidth="100"
+                                                                Width="100"
+                                                                VerticalAlignment="Center"/> 
+                                                    <controls:OutlinedLabel
+                                                        Grid.Column="1"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Text="{Binding RemainingTimeText}"
+                                                        Fill="#F0D890"
+                                                        Outline="Black"
+                                                        Thickness="1"
+                                                        FontSize="12"/>
+                                                </Grid> 
+                                            </Grid> 
+                                        </DataTemplate> 
+                                    </ItemsControl.ItemTemplate> 
+                                </ItemsControl> 
+                            </StackPanel> 
+                        </DataTemplate> 
+                    </ItemsControl.ItemTemplate> 
+                </ItemsControl> 
+            </StackPanel>
+    </Border> 
+</Window>   

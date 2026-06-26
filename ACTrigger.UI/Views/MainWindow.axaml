@@ -1,0 +1,212 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ACTrigger.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+
+        Width="800"
+        SizeToContent="Height"
+        MinWidth="600"
+
+        d:DesignWidth="700"
+        d:DesignHeight="900"
+
+        x:Class="ACTrigger.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="ACTrigger">
+        <Design.DataContext>
+            <vm:MainWindowViewModel/>
+        </Design.DataContext>
+
+        <StackPanel Margin="10" Spacing="10">
+
+            <!-- Overlay -->
+
+            <Grid
+                HorizontalAlignment="Stretch"
+                ColumnDefinitions="*,Auto">
+
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Overlay"
+                    FontSize="18"
+                    VerticalAlignment="Center" />
+
+                <Button
+                    Grid.Column="1"
+                    Width="36"
+                    Height="36"
+                    Padding="0"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    FontSize="16"
+                    Content="🍔"
+                    ToolTip.Tip="Hamburger Menu">
+
+                    <Button.Flyout>
+
+                        <MenuFlyout>
+
+                            <MenuItem
+                                Header="Settings"
+                                Click="Settings_Click"/>
+
+                            <MenuItem
+                                Header="About"
+                                Click="About_Click"/>
+
+                        </MenuFlyout>
+
+                    </Button.Flyout>
+
+                </Button>
+
+            </Grid>
+
+            <Border
+                Padding="10"
+                BorderThickness="1">
+
+                <StackPanel Spacing="10">
+
+                    <Grid
+                        ColumnDefinitions="*,*">
+
+                        <ToggleSwitch
+                            Grid.Column="0"
+                            Content="Enable Overlay"
+                            IsChecked="{Binding OverlayEnabled}" />
+
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            Content="Edit Layout"
+                            IsChecked="{Binding EditOverlayLayout}" />
+
+                    </Grid>
+
+                    <Grid
+                        Margin="20,0,0,0"
+                        IsEnabled="{Binding OverlayEnabled}"
+                        ColumnDefinitions="*,*"
+                        RowDefinitions="Auto,Auto">
+
+                        <ToggleSwitch
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Content="Outgoing Damage"
+                            IsChecked="{Binding ShowDamageOut}" />
+
+                        <ToggleSwitch
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Content="Incoming Damage"
+                            IsChecked="{Binding ShowDamageIn}" />
+
+                        <ToggleSwitch
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Content="Show Debuffs"
+                            IsChecked="{Binding ShowDebuffs}" />
+
+                        <ToggleSwitch
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Content="Debuff Targeting"
+                            IsChecked="{Binding AllowTargeting}"
+                            IsEnabled="{Binding ShowDebuffs}" />
+
+                    </Grid>
+
+                </StackPanel>
+
+            </Border>
+
+            <!-- Triggers -->
+
+            <TextBlock
+                Text="Triggers"
+                FontSize="18" />
+
+            <ListBox
+                Height="350"
+                ItemsSource="{Binding Triggers}"
+                SelectedItem="{Binding SelectedTrigger}">
+
+                <ListBox.Styles>
+
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Padding" Value="2"/>
+                        <Setter Property="MinHeight" Value="24"/>
+                    </Style>
+
+                </ListBox.Styles>
+
+                <ListBox.ItemTemplate>
+
+                    <DataTemplate>
+
+                        <Grid Height="24">
+
+                            <StackPanel
+                                Orientation="Horizontal"
+                                Spacing="6">
+
+                                <CheckBox
+                                    Margin="0"
+                                    Padding="0"
+                                    IsChecked="{Binding Enabled}" />
+
+                                <TextBlock
+                                    FontSize="13"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding Name}" />
+
+                            </StackPanel>
+
+                        </Grid>
+
+                    </DataTemplate>
+
+                </ListBox.ItemTemplate>
+
+            </ListBox>
+
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="10">
+
+                <Button
+                    Content="Add"
+                    Command="{Binding AddTriggerCommand}" />
+
+                <Button
+                    Content="Edit"
+                    Command="{Binding EditTriggerCommand}" />
+
+                <Button
+                    Content="Delete"
+                    Command="{Binding RemoveTriggerCommand}" />
+
+            </StackPanel>
+
+            <!-- Events -->
+
+            <TextBlock
+                Text="Events"
+                FontSize="18" />
+
+            <Button
+                Command="{Binding ToggleEventLogCommand}"
+                HorizontalAlignment="Left"
+                Content="{Binding EventLogButtonText}" />
+
+            <ListBox
+                x:Name="RecentEventsList"
+                Height="200"
+                IsVisible="{Binding ShowEventLog}"
+                ItemsSource="{Binding RecentEvents}" />
+
+        </StackPanel>
+</Window>

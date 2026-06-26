@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ACTrigger.UI.ViewModels"
+        x:Class="ACTrigger.UI.Views.DebuffClickWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Width="350"
+        Height="350"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowDecorations="None"
+        Background="Transparent">
+
+    <StackPanel>
+
+        <ItemsControl
+            ItemsSource="{Binding DebuffGroups}">
+
+            <ItemsControl.ItemTemplate>
+
+                <DataTemplate>
+
+                    <Button
+                        Content="{Binding TargetName}"
+                        HorizontalAlignment="Left"
+                        Click="TargetButton_Click"/>
+
+                </DataTemplate>
+
+            </ItemsControl.ItemTemplate>
+
+        </ItemsControl>
+
+    </StackPanel>
+
+</Window>

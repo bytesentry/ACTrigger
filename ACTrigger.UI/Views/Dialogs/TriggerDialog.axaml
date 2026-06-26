@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ACTrigger.UI.ViewModels"
+        x:Class="ACTrigger.UI.Views.Dialogs.TriggerDialog"
+        x:DataType="vm:TriggerDialogViewModel"
+        Width="500"
+        Height="350"
+        Title="Trigger Editor">
+
+    <StackPanel Margin="10" Spacing="10">
+
+        <TextBlock Text="Trigger Name" />
+
+        <TextBox Text="{Binding TriggerName}" />
+
+        <TextBlock Text="Pattern" />
+
+        <TextBox Text="{Binding Pattern}" />
+
+        <CheckBox
+            Content="Case Sensitive"
+            IsChecked="{Binding CaseSensitive}" />
+
+        <TextBlock Text="Sound" />
+
+        <ComboBox
+            HorizontalAlignment="Stretch"
+            ItemsSource="{Binding AvailableSounds}"
+            SelectedItem="{Binding SoundFile}" />
+
+        <Button
+            Width="100"
+            Content="Test Sound"
+            Command="{Binding TestSoundCommand}" />
+
+        <StackPanel
+            Orientation="Horizontal"
+            Spacing="10">
+
+            <Button
+                Name="SaveButton"
+                Content="Save" />
+
+            <Button
+                Name="CancelButton"
+                Content="Cancel" />
+
+        </StackPanel>
+
+    </StackPanel>
+
+</Window>

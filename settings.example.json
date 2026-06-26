@@ -1,0 +1,30 @@
+{
+  "LogPath": "C:\\Decal\\Decal Plugins\\ACTrigger.Decal\\",
+  "DamageOut": {
+    "X": 3666,
+    "Y": 194,
+    "Width": 250,
+    "Height": 250,
+    "Enabled": true
+  },
+  "DamageIn": {
+    "X": 3659,
+    "Y": 662,
+    "Width": 250,
+    "Height": 250,
+    "Enabled": true
+  },
+  "DebuffOverlay": {
+    "X": 4481,
+    "Y": 598,
+    "Width": 250,
+    "Height": 250,
+    "Enabled": true
+  },
+  "OverlayEnabled": true,
+  "ShowDamageOut": true,
+  "ShowDamageIn": true,
+  "EditOverlayLayout": false,
+  "ShowDebuffs": true,
+  "AllowTargeting": false
+}

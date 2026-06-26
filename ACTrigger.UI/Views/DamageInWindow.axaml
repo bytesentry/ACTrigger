@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ACTrigger.UI.ViewModels"
+        xmlns:local="using:ACTrigger.UI.Controls"
+        x:Class="ACTrigger.UI.Views.DamageInWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Width="350"
+        Height="350"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+
+    <Border
+        x:Name="LayoutBorder"
+        Background="#66000000"
+        BorderBrush="White"
+        BorderThickness="1"
+        Padding="5">
+
+        <StackPanel>
+
+            <TextBlock
+                x:Name="OverlayLabel"
+                Text="Incoming Combat"
+                FontWeight="Bold"
+                Margin="0,0,0,5"/>
+
+                <local:CombatTextCanvas
+                    Name="IncomingCanvas"/>
+            
+        </StackPanel>
+
+    </Border>
+
+</Window>

@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ACTrigger.UI.ViewModels"
+        x:Class="ACTrigger.UI.Views.CombatOverlayWindow"
+        x:DataType="vm:MainWindowViewModel"
+        WindowDecorations="None"
+        CanResize="False"
+        Width="250"
+        Height="400"
+        Topmost="True"
+        Title="Combat Overlay">
+
+    <Grid RowDefinitions="*,*">
+
+        <ItemsControl
+            Grid.Row="0"
+            ItemsSource="{Binding OutgoingCombatTexts}">
+
+            <ItemsControl.ItemTemplate>
+
+                <DataTemplate>
+
+                    <Border Margin="0,4">
+
+                        <TextBlock
+                            Text="{Binding Text}"
+                            FontSize="32"
+                            HorizontalAlignment="Center"/>
+
+                    </Border>
+
+                </DataTemplate>
+
+            </ItemsControl.ItemTemplate>
+
+        </ItemsControl>
+
+        <ItemsControl
+            Grid.Row="1"
+            VerticalAlignment="Top"
+            ItemsSource="{Binding IncomingCombatTexts}">
+
+            <ItemsControl.ItemTemplate>
+
+                <DataTemplate>
+
+                    <Border Margin="0,4">
+
+                        <TextBlock
+                            Text="{Binding Text}"
+                            FontSize="32"
+                            HorizontalAlignment="Center"/>
+
+                    </Border>
+
+                </DataTemplate>
+
+            </ItemsControl.ItemTemplate>
+
+        </ItemsControl>
+
+    </Grid>
+
+</Window>
