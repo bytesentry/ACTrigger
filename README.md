@@ -1,6 +1,6 @@
 # ACTrigger
 
-> **Important:** ACTrigger is **not an in-game Decal plugin interface**. It is a standalone desktop application that works **alongside** a lightweight Decal plugin. The Decal plugin collects real-time game events and communicates them to the external ACTrigger application, which provides overlays, sound alerts, and configuration outside of the game client.
+> **Important:** ACTrigger is **not an in-game Decal plugin interface**. It is a standalone desktop application that works **alongside** a lightweight Decal plugin. The plugin captures real-time game events and communicates them to the external ACTrigger application, while the application can also communicate back to the plugin when needed. This architecture enables modern overlays, sound alerts, and configuration outside of the game client.
 
 ACTrigger is a real-time trigger and combat overlay for **Asheron's Call** that combines a Decal plugin with a modern Avalonia UI. It provides configurable sound triggers, scrolling combat text, incoming damage notifications, and a debuff overlay that tracks the effects you apply to your current target.
 
@@ -50,11 +50,14 @@ Incoming damage is displayed separately so damage taken can be distinguished imm
 
 ---
 
-# Debuff Tracking
+## Debuff Tracking
 
 When you successfully cast a tracked debuff on a monster, ACTrigger records it and displays the remaining duration in a dedicated overlay.
 
 Debuffs are grouped by monster, making it easy to monitor multiple targets during combat.
+
+Each monster entry is also **clickable**. Clicking a tracked monster in the debuff overlay sends a command to the Decal plugin, allowing you to quickly reselect that monster in-game without searching for it manually.
+
 
 ![Debuff Overlay](Screenshots/ACTrigger-Debuff-Overlay.png)
 
