@@ -1,5 +1,11 @@
 # ACTrigger
 
+> **Important:** ACTrigger is **not an in-game Decal plugin interface**. It is a standalone desktop application that works **alongside** a lightweight Decal plugin. The Decal plugin collects real-time game events and communicates them to the external ACTrigger application, which provides overlays, sound alerts, and configuration outside of the game client.
+
+ACTrigger is a real-time trigger and combat overlay for **Asheron's Call** that combines a Decal plugin with a modern Avalonia UI. It provides configurable sound triggers, scrolling combat text, incoming damage notifications, and a debuff overlay that tracks the effects you apply to your current target.
+
+Designed to work alongside Decal rather than replace it, ACTrigger focuses on providing information that's easy to see during combat while remaining lightweight and highly configurable.
+
 ACTrigger is a real-time trigger and combat overlay for **Asheron's Call** that combines a Decal plugin with a modern Avalonia UI. It provides configurable sound triggers, scrolling combat text, incoming damage notifications, and a debuff overlay that tracks the effects you apply to your current target.
 
 Designed to work alongside Decal rather than replace it, ACTrigger focuses on providing information that's easy to see during combat while remaining lightweight and highly configurable.
