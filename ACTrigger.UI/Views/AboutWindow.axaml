@@ -3,24 +3,108 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     x:Class="ACTrigger.UI.Views.AboutWindow"
     Title="About ACTrigger"
-    Width="400"
-    Height="220">
+    Width="520"
+    Height="260"
+    CanResize="False"
+    ShowInTaskbar="False">
 
     <StackPanel
-        Margin="20"
-        Spacing="10">
+        Margin="24"
+        Spacing="18">
 
         <TextBlock
-            FontSize="20"
+            Text="ACTrigger"
+            FontSize="28"
             FontWeight="Bold"
-            Text="ACTrigger"/>
+            HorizontalAlignment="Center"/>
+        
+        <TextBlock
+            Text="Version 0.9.1"
+            FontSize="13"
+            Opacity="0.65"
+            HorizontalAlignment="Center"/>
 
         <TextBlock
-            Text="Combat triggers and overlays for Asheron's Call."/>
+            Text="Combat triggers and overlays for Asheron's Call."
+            FontSize="15"
+            TextAlignment="Center"
+            HorizontalAlignment="Center"/>
 
-        <Button
-            Content="https://github.com/bytesentry"
-            Click="GitHub_Click"/>
+        <TextBlock
+            Text="Created by ByteSentry"
+            FontSize="13"
+            Opacity="0.65"
+            HorizontalAlignment="Center"/>
+
+        <Border
+            Height="1"
+            Margin="0,4"
+            Background="#404040"/>
+
+        <StackPanel
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            Spacing="16">
+
+            <Button
+                Width="180"
+                Height="44"
+                Click="Website_Click"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+
+                <Grid>
+                    <StackPanel
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="6">
+
+                        <TextBlock
+                            Text="🌐"
+                            FontSize="18"/>
+
+                        <TextBlock
+                            Text="Website"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Margin="0,2,0,0"/>
+
+                    </StackPanel>
+                </Grid>
+
+            </Button>
+
+            <Button
+                Width="180"
+                Height="44"
+                Click="Coffee_Click"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+
+                <Grid>
+                    <StackPanel
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="6">
+
+                        <TextBlock
+                            Text="☕"
+                            FontSize="18"/>
+
+                        <TextBlock
+                            Text="Buy Me a Coffee"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Margin="0,2,0,0"/>
+
+                    </StackPanel>
+                </Grid>
+
+            </Button>
+
+        </StackPanel>
 
     </StackPanel>
 

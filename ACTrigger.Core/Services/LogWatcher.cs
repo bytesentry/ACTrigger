@@ -29,8 +29,14 @@ public class LogWatcher
                     FileMode.Open,
                     FileAccess.Read,
                     FileShare.ReadWrite);
-
-                stream.Seek(
+                    
+                    if (position > stream.Length)
+                    {
+                        Console.WriteLine("Log was recreated. Restarting at beginning.");
+                        position = 0;
+                    
+                    }
+                    stream.Seek(
                     position,
                     SeekOrigin.Begin);
 

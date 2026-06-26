@@ -5,7 +5,9 @@
     x:DataType="vm:MainWindowViewModel"
     x:Class="ACTrigger.UI.Views.SettingsWindow"
     SizeToContent="WidthAndHeight"
-    Title="Settings">
+    Title="Settings"
+    CanResize="False"
+    ShowInTaskbar="False">
 
     <StackPanel
         Margin="10"
@@ -41,9 +43,21 @@
             SelectedItem="{Binding SelectedDebuffScale}">
         </ComboBox>
             <Button
-                Content="Done"
+                Width="180"
+                Height="44"
                 HorizontalAlignment="Center"
-                Click="Done_Click"/>
+                Click="Done_Click">
+
+                <TextBlock
+                    Text="Done"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    TextAlignment="Center"
+                    Margin="0,2,0,0"/>
+
+            </Button>
     </StackPanel>
 
 </Window>

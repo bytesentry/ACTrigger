@@ -11,17 +11,27 @@ public partial class AboutWindow : Window
         InitializeComponent();
     }
 
-    private void GitHub_Click(
-        object? sender,
-        RoutedEventArgs e)
+    private static void OpenUrl(string url)
     {
         Process.Start(
             new ProcessStartInfo
             {
-                FileName =
-                    "https://github.com/bytesentry",
-                UseShellExecute =
-                    true
+                FileName = url,
+                UseShellExecute = true
             });
+    }
+
+    private void Website_Click(
+        object? sender,
+        RoutedEventArgs e)
+    {
+        OpenUrl("https://bytesentry.github.io/");
+    }
+
+    private void Coffee_Click(
+        object? sender,
+        RoutedEventArgs e)
+    {
+        OpenUrl("https://buymeacoffee.com/bytesentry");
     }
 }

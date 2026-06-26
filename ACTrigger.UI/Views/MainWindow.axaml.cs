@@ -54,25 +54,24 @@ public partial class MainWindow : Window
 
     private void Settings_Click(
         object? sender,
-        Avalonia.Interactivity.RoutedEventArgs e)
+        RoutedEventArgs e)
     {
         var window =
             new SettingsWindow
             {
-                DataContext =
-                    DataContext
+                DataContext = DataContext
             };
 
-        window.Show();
+        window.Show(this);
     }
+    
     private void About_Click(
         object? sender,
         RoutedEventArgs e)
     {
-        var window =
-            new AboutWindow();
+        var about = new AboutWindow();
 
-        window.Show();
+        about.Show(this);
     }
 
     private void Vm_PropertyChanged(
