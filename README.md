@@ -44,7 +44,7 @@ Outgoing damage is displayed as animated floating combat text near your characte
 
 ## Incoming Damage
 
-Incoming damage is displayed separately so damage taken can be distinguished immediately from your own attacks.
+Incoming damage and healing is displayed separately to distinguish immediately from your own attacks.
 
 ![Incoming Damage](Screenshots/ACTrigger-Incoming-Damage.png)
 
