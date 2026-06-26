@@ -67,7 +67,7 @@ Each monster entry is also **clickable**. Clicking a tracked monster in the debu
 
 When enemies apply tracked effects to you, ACTrigger displays a notification so important debuffs are immediately visible.
 
-![Incoming Debuff](Screenshots/ACTrigger-Incoming-Debuff.png)
+![Incoming Debuff](Screenshots/ACTrigger-Incoming-Debuff2.png)
 
 ---
 
