@@ -17,9 +17,19 @@
 
         <TextBox Text="{Binding Pattern}" />
 
-        <CheckBox
-            Content="Case Sensitive"
-            IsChecked="{Binding CaseSensitive}" />
+        <StackPanel
+            Orientation="Horizontal"
+            Spacing="20">
+
+            <CheckBox
+                Content="Case Sensitive"
+                IsChecked="{Binding CaseSensitive}" />
+
+            <CheckBox
+                Content="Starts With"
+                IsChecked="{Binding StartsWith}" />
+
+        </StackPanel>
 
         <TextBlock Text="Sound" />
 

@@ -228,10 +228,16 @@ public partial class App : Application
             // repeated Show()/Hide() cycles on X11 (or everywhere).
             
             damageOut.Opacity =
-                vm.ShowDamageOut ? 1 : 0;
+                vm.OverlayEnabled &&
+                vm.ShowDamageOut
+                    ? 1
+                    : 0;
 
             damageIn.Opacity =
-                vm.ShowDamageIn ? 1 : 0;
+                vm.OverlayEnabled &&
+                vm.ShowDamageIn
+                    ? 1
+                    : 0;
 
             debuffWindow.Opacity =
                 vm.OverlayEnabled &&

@@ -256,6 +256,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private static readonly Regex[] OutgoingMagicPatterns =
     {
+        // Physical / missile / elemental weapon damage
         new(
             @"^Critical hit!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
             RegexOptions.IgnoreCase),
@@ -278,6 +279,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
         new(
             @"^Recklessness!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
+            RegexOptions.IgnoreCase),
+
+        // Spell damage (Flame Bolt, Acid Stream, Lightning Bolt, etc.)
+        new(
+            @"^Critical hit!\s+You .+ for (\d+) point.* with .+\.$",
+            RegexOptions.IgnoreCase),
+
+        new(
+            @"^You .+ for (\d+) point.* with .+\.$",
             RegexOptions.IgnoreCase)
     };
 
@@ -684,7 +694,18 @@ public partial class MainWindowViewModel : ViewModelBase
                 double t =
                     text.Age / 0.3;
                 
-                text.Opacity = t * t;
+                double fadeT =
+                    (text.Age - 0.7) /
+                    (text.Lifetime - 0.7);
+
+                fadeT =
+                    Math.Clamp(
+                        fadeT,
+                        0,
+                        1);
+
+                text.Opacity =
+                    1.0 - fadeT;
 
                 double targetScale =
                     text.Type == CombatTextType.Kill
@@ -839,6 +860,7 @@ public partial class MainWindowViewModel : ViewModelBase
             TriggerName = SelectedTrigger.Name,
             Pattern = SelectedTrigger.Pattern,
             CaseSensitive = SelectedTrigger.CaseSensitive,
+            StartsWith = SelectedTrigger.StartsWith,
             SoundFile = Path.GetFileName(
                 SelectedTrigger.SoundFile ?? "")
         };
@@ -859,6 +881,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedTrigger.Name = dialog.Result.Name;
         SelectedTrigger.Pattern = dialog.Result.Pattern;
         SelectedTrigger.CaseSensitive = dialog.Result.CaseSensitive;
+        SelectedTrigger.StartsWith = dialog.Result.StartsWith;
         SelectedTrigger.SoundFile = dialog.Result.SoundFile;
 
         SaveTriggers();

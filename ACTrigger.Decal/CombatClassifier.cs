@@ -89,7 +89,7 @@ namespace ACTrigger.Decal
             new(@"^You receive (\d+) points of periodic healing\.$"),
             new(@"^.+ restore(?:s)? (\d+) points of your health\.$")
         };
-
+        
         public static bool IsCombat(
             string text)
         {
@@ -97,5 +97,6 @@ namespace ACTrigger.Decal
                 pattern =>
                     pattern.IsMatch(text));
         }
+        
     }
 }

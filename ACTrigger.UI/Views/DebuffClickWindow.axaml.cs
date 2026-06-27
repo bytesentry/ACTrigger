@@ -11,11 +11,6 @@ public partial class DebuffClickWindow : Window
     {
         InitializeComponent();
 
-        Opened += (_, _) =>
-        {
-            Console.WriteLine(
-                $"CLICK WINDOW DATACONTEXT = {DataContext?.GetType().FullName}");
-        };
     }
 
     private void TargetButton_Click(
@@ -28,9 +23,5 @@ public partial class DebuffClickWindow : Window
         if (button.DataContext is not DebuffGroup group)
             return;
 
-        Console.WriteLine(
-            $"CLICK WINDOW TARGET: " +
-            $"{group.TargetName} " +
-            $"({group.TargetId})");
     }
 }

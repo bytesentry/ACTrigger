@@ -21,6 +21,9 @@ public partial class TriggerDialogViewModel : ViewModelBase
     private bool caseSensitive;
 
     [ObservableProperty]
+    private bool startsWith;
+
+    [ObservableProperty]
     private string soundFile = "";
 
     public ObservableCollection<string> AvailableSounds { get; } =
@@ -59,6 +62,7 @@ public partial class TriggerDialogViewModel : ViewModelBase
             Name = TriggerName,
             Pattern = Pattern,
             CaseSensitive = CaseSensitive,
+            StartsWith = StartsWith,
             SoundFile = string.IsNullOrWhiteSpace(SoundFile)
                 ? null
                 : Path.Combine(

@@ -26,16 +26,22 @@ public class TriggerService
             if (!trigger.Enabled)
                 continue;
 
-            bool matched =
+            StringComparison comparison =
                 trigger.CaseSensitive
-                ? entry.Message.Contains(trigger.Pattern)
-                : entry.Message.Contains(
-                    trigger.Pattern,
-                    StringComparison.OrdinalIgnoreCase);
+                    ? StringComparison.Ordinal
+                    : StringComparison.OrdinalIgnoreCase;
+
+            bool matched =
+                trigger.StartsWith
+                    ? entry.Message.StartsWith(
+                        trigger.Pattern,
+                        comparison)
+                    : entry.Message.Contains(
+                        trigger.Pattern,
+                        comparison);
 
             if (matched)
             {
-
                 TriggerMatched?.Invoke(trigger, entry);
 
                 if (!string.IsNullOrEmpty(trigger.SoundFile))

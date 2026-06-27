@@ -17,5 +17,8 @@ public partial class Trigger : ObservableObject
     private bool caseSensitive;
 
     [ObservableProperty]
+    private bool startsWith;
+
+    [ObservableProperty]
     private string? soundFile;
 }

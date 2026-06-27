@@ -33,10 +33,10 @@ public class CombatTextCanvas
     }
     
     private static readonly Bitmap KillBitmap =
-    new Bitmap(
-        AssetLoader.Open(
-            new Uri(
-                "avares://ACTrigger.UI/Assets/Images/skull.png")));
+        new Bitmap(
+            AssetLoader.Open(
+                new Uri(
+                    "avares://ACTrigger.UI/Assets/Images/skull.png")));
 
 
     public CombatTextCanvas()
@@ -131,11 +131,7 @@ public class CombatTextCanvas
                     text.Text,
                     System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight,
-                    new Typeface(
-                        new FontFamily(
-                            "avares://ACTrigger.UI/Assets/Fonts#Viking-Normal"),
-                        FontStyle.Normal,
-                        FontWeight.Bold),
+                    TextRenderer.VikingTypeface,
                     text.FontSize,
                     brush);
 
@@ -166,11 +162,7 @@ public class CombatTextCanvas
                     text.Text,
                     System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight,
-                    new Typeface(
-                        new FontFamily(
-                            "avares://ACTrigger.UI/Assets/Fonts#Viking-Normal"),
-                        FontStyle.Normal,
-                        FontWeight.Bold),
+                    TextRenderer.VikingTypeface,
                     text.FontSize,
                     outlineBrush);
 
@@ -184,10 +176,7 @@ public class CombatTextCanvas
             TextRenderer.DrawOutlinedText(
                 context,
                 text.Text,
-                new Typeface(
-                    new FontFamily("avares://ACTrigger.UI/Assets/Fonts#Viking-Normal"),
-                    FontStyle.Normal,
-                    FontWeight.Bold),
+                TextRenderer.VikingTypeface,
                 text.FontSize,
                 brush,
                 outlineBrush,
@@ -196,8 +185,15 @@ public class CombatTextCanvas
         }
     }
 }
+
 public static class TextRenderer
 {
+    public static readonly Typeface VikingTypeface =
+            new(
+                new FontFamily("avares://ACTrigger.UI/Assets/Fonts#Viking-Normal"),
+                FontStyle.Normal,
+                FontWeight.Bold);
+
     public static void DrawOutlinedText(
         DrawingContext context,
         string text,
@@ -208,6 +204,7 @@ public static class TextRenderer
         Point position,
         int thickness = 1)
     {
+
         var outlineText =
             new FormattedText(
                 text,
@@ -226,20 +223,45 @@ public static class TextRenderer
                 fontSize,
                 fill);
 
-        for (int y = -thickness; y <= thickness; y++)
-        {
-            for (int x = -thickness; x <= thickness; x++)
-            {
-                if (x == 0 && y == 0)
-                    continue;
 
-                context.DrawText(
-                    outlineText,
-                    new Point(position.X + x, position.Y + y));
-            }
-        }
+        // Draw outline in the 8 compass directions.
+        // Avoid drawing a full NxN kernel here; it produces an overly heavy outline
+        // and noticeably changes the appearance of fading combat text.
+        context.DrawText(
+            outlineText,
+            new Point(position.X - thickness, position.Y));
 
-        context.DrawText(fillText, position);
+        context.DrawText(
+            outlineText,
+            new Point(position.X + thickness, position.Y));
+
+        context.DrawText(
+            outlineText,
+            new Point(position.X, position.Y - thickness));
+
+        context.DrawText(
+            outlineText,
+            new Point(position.X, position.Y + thickness));
+
+        context.DrawText(
+            outlineText,
+            new Point(position.X - thickness, position.Y - thickness));
+
+        context.DrawText(
+            outlineText,
+            new Point(position.X + thickness, position.Y - thickness));
+
+        context.DrawText(
+            outlineText,
+            new Point(position.X - thickness, position.Y + thickness));
+
+        context.DrawText(
+            outlineText,
+            new Point(position.X + thickness, position.Y + thickness));
+
+        context.DrawText(
+            fillText,
+            position);
     }
     
 }

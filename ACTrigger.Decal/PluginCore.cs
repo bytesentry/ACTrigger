@@ -316,21 +316,8 @@ namespace ACTrigger.Decal
                     return "Tell";
             }
 
-            // Non-chat messages that still come through ChatBoxMessage.
-            if (text.Contains("obtain "))
-                return "Loot";
-
-            if (text.Contains("using your knowledge of"))
-                return "Loot";
-
-            if (text.Contains("learn the "))
-                return "System";
-
-            if (text.Contains("You are now level"))
-                return "System";
-
-            // Anything we don't recognize is still chat.
-            return "Chat";
+            // Anything we don't recognize is routed or system.
+            return EventClassifier.GetEventChannel(text);
         }
 
         private void WriteEvent(
@@ -343,7 +330,7 @@ namespace ACTrigger.Decal
 
             File.AppendAllText(
                 logFile,
-                $"{DateTime.UtcNow:O}|{channel}|{message}\r\n");
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}|{channel}|{message}\r\n");
         }
 
         private void CharacterFilter_SpellCast(

@@ -145,7 +145,62 @@ public static class ChatClassifier
             ChatChannels.LFG => "LFG",
             ChatChannels.Roleplay => "Roleplay",
             ChatChannels.Society => "Society",
-            _ => "Chat"
+            _ => "System"
         };
+    }
+    
+}
+public static class EventClassifier
+{
+    public static string GetEventChannel(string text)
+    {
+        // Spellcasting
+        if (Regex.IsMatch(text,
+            @"^Your spell fizzled\.$"))
+            return "SpellCast";
+
+        if (Regex.IsMatch(text,
+            @"^The spell consumed .+$"))
+            return "SpellCast";
+
+        // Enchantments
+        if (Regex.IsMatch(text,
+            @"^Aetheria surges on .+ with the power of .+!$"))
+            return "Enchant";
+
+        if (Regex.IsMatch(text,
+            @"^.+ has expired\.$"))
+            return "Enchant";
+
+        // System
+        if (Regex.IsMatch(text,
+            @"^You've banked \d+ Luminance\.$"))
+            return "System";
+
+        if (Regex.IsMatch(text,
+            @"^You have entered the .+ channel\.$"))
+            return "System";
+
+        if (Regex.IsMatch(text,
+            @"^Welcome to .+$"))
+            return "System";
+
+        if (Regex.IsMatch(text,
+            @"^.+ has given you permission to loot his or her kills\.$"))
+            return "System";
+
+        if (Regex.IsMatch(text,
+            @"^.+ may now loot your kills\.$"))
+            return "System";
+
+        if (Regex.IsMatch(text,
+            @"^\[FSHIP\]: .+$"))
+            return "System";
+
+        if (Regex.IsMatch(text,
+            @"^You have been recruited into .+$"))
+            return "System";
+
+        return "System";
     }
 }
