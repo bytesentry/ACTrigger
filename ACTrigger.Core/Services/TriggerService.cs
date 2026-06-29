@@ -23,8 +23,21 @@ public class TriggerService
     {
         foreach (var trigger in _triggers)
         {
+            
             if (!trigger.Enabled)
                 continue;
+
+                if (trigger.Channel != TriggerChannel.Any &&
+                    trigger.Channel.ToString() != entry.Channel)
+                {
+                    continue;
+                }
+
+            if (trigger.IgnoreOutgoing &&
+                IsOutgoingSocialMessage(entry))
+            {
+                continue;
+            }
 
             StringComparison comparison =
                 trigger.CaseSensitive
@@ -32,13 +45,15 @@ public class TriggerService
                     : StringComparison.OrdinalIgnoreCase;
 
             bool matched =
-                trigger.StartsWith
-                    ? entry.Message.StartsWith(
-                        trigger.Pattern,
-                        comparison)
-                    : entry.Message.Contains(
-                        trigger.Pattern,
-                        comparison);
+                string.IsNullOrWhiteSpace(trigger.Pattern)
+                    ? true
+                    : trigger.StartsWith
+                        ? entry.Message.StartsWith(
+                            trigger.Pattern,
+                            comparison)
+                        : entry.Message.Contains(
+                            trigger.Pattern,
+                            comparison);
 
             if (matched)
             {
@@ -60,5 +75,28 @@ public class TriggerService
         _triggers.Clear();
 
         _triggers.AddRange(config.Triggers);
+    }
+
+    private static bool IsOutgoingSocialMessage(LogEntry entry)
+    {
+        if (entry.Channel is not ("Tell" or
+                                "Area" or
+                                "General" or
+                                "Trade" or
+                                "Fellowship" or
+                                "Allegiance" or
+                                "LFG" or
+                                "Roleplay" or
+                                "Society"))
+        {
+            return false;
+        }
+
+        return entry.Message.StartsWith(
+                "You tell ",
+                StringComparison.OrdinalIgnoreCase)
+            || entry.Message.StartsWith(
+                "You say, ",
+                StringComparison.OrdinalIgnoreCase);
     }
 }

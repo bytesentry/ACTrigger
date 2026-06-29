@@ -4,7 +4,7 @@
         x:Class="ACTrigger.UI.Views.Dialogs.TriggerDialog"
         x:DataType="vm:TriggerDialogViewModel"
         Width="500"
-        Height="350"
+        Height="420"
         Title="Trigger Editor">
 
     <StackPanel Margin="10" Spacing="10">
@@ -28,9 +28,18 @@
             <CheckBox
                 Content="Starts With"
                 IsChecked="{Binding StartsWith}" />
+            
+            <CheckBox
+                Content="Ignore outgoing"
+                IsChecked="{Binding IgnoreOutgoing}" />
 
         </StackPanel>
+        <TextBlock Text="Channel" />
 
+        <ComboBox
+            HorizontalAlignment="Stretch"
+            ItemsSource="{Binding AvailableChannels}"
+            SelectedItem="{Binding Channel}" />
         <TextBlock Text="Sound" />
 
         <ComboBox

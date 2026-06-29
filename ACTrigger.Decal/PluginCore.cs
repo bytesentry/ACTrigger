@@ -9,6 +9,8 @@ using System.Timers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
 
 
 namespace ACTrigger.Decal
@@ -19,6 +21,10 @@ namespace ACTrigger.Decal
         private System.Timers.Timer? _targetTimer;
         private string? pluginFolder;
         private string? logFile;
+        private string? errorLogFile;
+        private readonly HashSet<int> trackedTargets = new HashSet<int>();
+        private readonly Dictionary<int, DateTime> pendingReleases = new Dictionary<int, DateTime>();
+        private readonly object pendingReleaseLock = new object();
 
         //test
         //private System.Timers.Timer? _scanTimer;
@@ -43,6 +49,8 @@ namespace ACTrigger.Decal
 
             logFile = System.IO.Path.Combine(pluginFolder, "actrigger.log");
 
+            errorLogFile = System.IO.Path.Combine(pluginFolder, "actrigger-errors.log");
+
             if (!System.IO.File.Exists(logFile))
                 System.IO.File.WriteAllText(logFile, "");
 
@@ -58,9 +66,9 @@ namespace ACTrigger.Decal
             }
             catch (Exception ex)
             {
-                WriteEvent(
-                    "System",
-                    $"ERROR:{ex}");
+                WriteError(
+                    nameof(CharacterFilter_SpellCast),
+                    ex);
             }
             
 
@@ -96,8 +104,11 @@ namespace ACTrigger.Decal
             _targetTimer =
                 new System.Timers.Timer(250);
 
-            _targetTimer.Elapsed +=
-                (_, _) => CheckTargetRequest();
+            _targetTimer.Elapsed += (_, _) =>
+            {
+                CheckTargetRequest();
+                ProcessPendingReleases();
+            };
 
             _targetTimer.Start();
 
@@ -186,9 +197,9 @@ namespace ACTrigger.Decal
             }
             catch (Exception ex)
             {
-                WriteEvent(
-                    "System",
-                    $"ShutdownError:{ex.Message}");
+                WriteError(
+                    nameof(Shutdown),
+                    ex);
             }
 
             WriteEvent(
@@ -239,52 +250,44 @@ namespace ACTrigger.Decal
             }
             catch (Exception ex)
             {
-                WriteEvent(
-                    "System",
-                    $"ERROR:{ex.Message}");
+                WriteError(
+                    nameof(CharacterFilter_ChangeEnchantments),
+                    ex);
             }
-        }
-
-        private void CharacterFilter_ChangeVital(
-            object sender,
-            ChangeVitalEventArgs e)
-        {
-            
         }
 
         private void Current_ChatBoxMessage(
             object sender,
             ChatTextInterceptEventArgs e)
         {
-            string channel = ClassifyChat(e.Text);
-                
-
-            string text = e.Text;
-                
-
-            if (channel != "Chat")
+            try
             {
-                text = Regex.Replace(
-                    text,
-                    @"^\[[^\]]+\]\s*",
-                    "");
-            }
+                string channel = ClassifyChat(e.Text);
 
-            WriteEvent(
-                channel,
-                text);
+                string text = e.Text;
+
+                if (channel != "Chat")
+                {
+                    text = Regex.Replace(
+                        text,
+                        @"^\[[^\]]+\]\s*",
+                        "");
+                }
+
+                WriteEvent(
+                    channel,
+                    text);
+            }
+            catch (Exception ex)
+            {
+                WriteError(
+                    nameof(Current_ChatBoxMessage),
+                    ex);
+            }
         }
 
         private string ClassifyChat(string text)
         {
-            // Combat gets first priority.
-            if (CombatClassifier.IsCombat(text))
-                return "Combat";
-
-            // Spell incantations.
-            if (ChatClassifier.IsSpellCastingMessage(text))
-                return "SpellCast";
-
             // Proper chat channels.
             switch (ChatClassifier.GetChatChannel(text))
             {
@@ -312,9 +315,22 @@ namespace ACTrigger.Decal
                 case ChatClassifier.ChatChannels.Area:
                     return "Area";
 
-                case ChatClassifier.ChatChannels.Tells:
+                case ChatClassifier.ChatChannels.Tell:
                     return "Tell";
+
+                case ChatClassifier.ChatChannels.TellOutgoing:
+                    return "TellOutgoing";
+
+                case ChatClassifier.ChatChannels.TellNpc:
+                    return "TellNpc";
             }
+            // Combat gets first priority.
+            if (CombatClassifier.IsCombat(text))
+                return "Combat";
+
+            // Spell incantations.
+            if (ChatClassifier.IsSpellCastingMessage(text))
+                return "SpellCast";
 
             // Anything we don't recognize is routed or system.
             return EventClassifier.GetEventChannel(text);
@@ -330,7 +346,17 @@ namespace ACTrigger.Decal
 
             File.AppendAllText(
                 logFile,
-                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}|{channel}|{message}\r\n");
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}|{channel}|{message}\r\n");
+        }
+
+        private void WriteError(
+            string source,
+            Exception ex)
+        {
+            File.AppendAllText(
+                errorLogFile,
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [{source}]\r\n" +
+                $"{ex}\r\n\r\n");
         }
 
         private void CharacterFilter_SpellCast(
@@ -420,6 +446,8 @@ namespace ACTrigger.Decal
                         $" | Description={spell.Description}" +
                         $" | TargetId={wo.Id}" +
                         $" | TargetName={wo.Name}");
+
+                    trackedTargets.Add(wo.Id);
                 }
                 WriteEvent(
                     "WorldObject",
@@ -429,9 +457,9 @@ namespace ACTrigger.Decal
             }
             catch (Exception ex)
             {
-                WriteEvent(
-                    "SpellCastError",
-                    ex.ToString());
+                WriteError(
+                    nameof(CharacterFilter_SpellCast),
+                    ex);
             }
         }
         
@@ -454,14 +482,24 @@ namespace ACTrigger.Decal
                     return;
                 }
 
-                _ = VerifyReleasedObject(wo.Id);
+                // Ignore objects we're not actively tracking.
+                if (!trackedTargets.Contains(wo.Id))
+                {
+                    return;
+                }
+
+                lock (pendingReleaseLock)
+                {
+                    pendingReleases[wo.Id] = DateTime.Now.AddSeconds(1);
+                }
+    
 
             }
             catch (Exception ex)
             {
-                WriteEvent(
-                    "ReleaseObjectError",
-                    ex.ToString());
+                WriteError(
+                    nameof(WorldFilter_ReleaseObject),
+                    ex);
             }
         }
 
@@ -492,8 +530,11 @@ namespace ACTrigger.Decal
                     "ObjectChange",
                     $"Id={wo.Id} Name={wo.Name}");
             }
-            catch
+            catch (Exception ex)
             {
+                WriteError(
+                    nameof(WorldFilter_ChangeObject),
+                    ex);
             }
         }
         /* before we test detecting other people's buffs
@@ -564,25 +605,55 @@ namespace ACTrigger.Decal
             }
             catch (Exception ex)
             {
-                WriteEvent(
-                    "TargetRequestError",
-                    ex.ToString());
+                WriteError(
+                    nameof(CheckTargetRequest),
+                    ex);
             }
         }
 
-        //verify object is actually dead or gone before releasing
-        private async Task VerifyReleasedObject(int id)
+        private void ProcessPendingReleases()
         {
-            await Task.Delay(1000);
+            List<KeyValuePair<int, DateTime>> pending;
 
-            var lookup =
-                CoreManager.Current.WorldFilter[id];
-
-            if (lookup == null)
+            lock (pendingReleaseLock)
             {
-                WriteEvent(
-                    "ReleaseVerified",
-                    $"Id={id}");
+                if (pendingReleases.Count == 0)
+                    return;
+
+                pending = pendingReleases.ToList();
+            }
+
+            var now = DateTime.Now;
+
+            foreach (var entry in pending)
+            {
+                if (entry.Value > now)
+                    continue;
+
+                try
+                {
+                    var lookup = CoreManager.Current.WorldFilter[entry.Key];
+
+                    if (lookup == null)
+                    {
+                        trackedTargets.Remove(entry.Key);
+
+                        WriteEvent(
+                            "ReleaseVerified",
+                            $"Id={entry.Key}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteError(
+                        nameof(ProcessPendingReleases),
+                        ex);
+                }
+
+                lock (pendingReleaseLock)
+                {
+                    pendingReleases.Remove(entry.Key);
+                }
             }
         }
 

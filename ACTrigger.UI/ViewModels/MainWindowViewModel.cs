@@ -821,8 +821,11 @@ public partial class MainWindowViewModel : ViewModelBase
         if (dialog.Result == null)
             return;
 
-        if (string.IsNullOrWhiteSpace(dialog.Result.Pattern))
+        if (dialog.Result.Channel == TriggerChannel.Any &&
+            string.IsNullOrWhiteSpace(dialog.Result.Pattern))
+        {
             return;
+        }
 
         Triggers.Add(dialog.Result);
         dialog.Result.PropertyChanged +=
@@ -861,6 +864,8 @@ public partial class MainWindowViewModel : ViewModelBase
             Pattern = SelectedTrigger.Pattern,
             CaseSensitive = SelectedTrigger.CaseSensitive,
             StartsWith = SelectedTrigger.StartsWith,
+            Channel = SelectedTrigger.Channel,
+            IgnoreOutgoing = SelectedTrigger.IgnoreOutgoing,
             SoundFile = Path.GetFileName(
                 SelectedTrigger.SoundFile ?? "")
         };
@@ -882,6 +887,8 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedTrigger.Pattern = dialog.Result.Pattern;
         SelectedTrigger.CaseSensitive = dialog.Result.CaseSensitive;
         SelectedTrigger.StartsWith = dialog.Result.StartsWith;
+        SelectedTrigger.Channel = dialog.Result.Channel;
+        SelectedTrigger.IgnoreOutgoing = dialog.Result.IgnoreOutgoing;
         SelectedTrigger.SoundFile = dialog.Result.SoundFile;
 
         SaveTriggers();
@@ -1378,7 +1385,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (timestamp -
             _lastOutgoingHit >
-            TimeSpan.FromMilliseconds(400))
+            TimeSpan.FromMilliseconds(500))
         {
             _outgoingBurstIndex = 0;
         }

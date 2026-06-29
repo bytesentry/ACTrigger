@@ -1,9 +1,11 @@
+using System;
 using System.IO;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ACTrigger.Models;
 using ACTrigger.Core.Services;
+using System.Collections.Generic;
 
 namespace ACTrigger.UI.ViewModels;
 
@@ -25,6 +27,15 @@ public partial class TriggerDialogViewModel : ViewModelBase
 
     [ObservableProperty]
     private string soundFile = "";
+    
+    [ObservableProperty]
+    private bool ignoreOutgoing;
+
+    public IEnumerable<TriggerChannel> AvailableChannels =>
+        Enum.GetValues<TriggerChannel>();
+
+    [ObservableProperty]
+    private TriggerChannel channel = TriggerChannel.Any;
 
     public ObservableCollection<string> AvailableSounds { get; } =
         new();
@@ -63,6 +74,8 @@ public partial class TriggerDialogViewModel : ViewModelBase
             Pattern = Pattern,
             CaseSensitive = CaseSensitive,
             StartsWith = StartsWith,
+            Channel = Channel,
+            IgnoreOutgoing = IgnoreOutgoing,
             SoundFile = string.IsNullOrWhiteSpace(SoundFile)
                 ? null
                 : Path.Combine(

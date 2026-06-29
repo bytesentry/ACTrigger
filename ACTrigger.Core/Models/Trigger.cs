@@ -21,4 +21,10 @@ public partial class Trigger : ObservableObject
 
     [ObservableProperty]
     private string? soundFile;
+
+    [ObservableProperty]
+    private TriggerChannel channel = TriggerChannel.Any;
+
+    [ObservableProperty]
+    private bool ignoreOutgoing;
 }

@@ -42,23 +42,26 @@ public static class ChatClassifier
 
         All					= 0xFF,
     }
-    [Flags]
-    public enum ChatChannels : ushort
+
+    public enum ChatChannels
     {
-        None		= 0x0000,
+        None            = 0x0000,
 
-        Area		= 0x0001,
-        Tells		= 0x0002,
+        Area            = 0x0001,
 
-        Fellowship	= 0x0004,
-        Allegiance	= 0x0008,
-        General		= 0x0010,
-        Trade		= 0x0020,
-        LFG			= 0x0040,
-        Roleplay	= 0x0080,
-        Society		= 0x0100,
+        Tell            = 0x0002,
+        TellOutgoing    = 0x0004,
+        TellNpc         = 0x0008,
 
-        All			= 0xFFFF,
+        Fellowship      = 0x0010,
+        Allegiance      = 0x0020,
+        General         = 0x0040,
+        Trade           = 0x0080,
+        LFG             = 0x0100,
+        Roleplay        = 0x0200,
+        Society         = 0x0400,
+
+        All             = 0xFFFF,
     }
     public static bool IsChat(string text, ChatFlags chatFlags = ChatFlags.All)
     {
@@ -93,8 +96,14 @@ public static class ChatClassifier
         if (IsChat(text, ChatFlags.PlayerSaysLocal | ChatFlags.YouSay | ChatFlags.NpcSays))
             return ChatChannels.Area;
 
-        if (IsChat(text, ChatFlags.PlayerTellsYou | ChatFlags.YouTell | ChatFlags.NpcTellsYou))
-            return ChatChannels.Tells;
+        if (IsChat(text, ChatFlags.PlayerTellsYou))
+            return ChatChannels.Tell;
+
+        if (IsChat(text, ChatFlags.YouTell))
+            return ChatChannels.TellOutgoing;
+
+        if (IsChat(text, ChatFlags.NpcTellsYou))
+            return ChatChannels.TellNpc;
 
         if (IsChat(text, ChatFlags.PlayerSaysChannel))
         {
@@ -130,14 +139,20 @@ public static class ChatClassifier
     
     public static string GetLogChannel(string text)
     {
+        if (IsChat(text, ChatFlags.PlayerTellsYou))
+            return "Tell";
 
-        ChatChannels channel =
-            GetChatChannel(text);
+        if (IsChat(text, ChatFlags.YouTell))
+            return "TellOutgoing";
+
+        if (IsChat(text, ChatFlags.NpcTellsYou))
+            return "TellNpc";
+
+        ChatChannels channel = GetChatChannel(text);
 
         return channel switch
         {
             ChatChannels.Area => "Area",
-            ChatChannels.Tells => "Tell",
             ChatChannels.Fellowship => "Fellowship",
             ChatChannels.Allegiance => "Allegiance",
             ChatChannels.General => "General",
