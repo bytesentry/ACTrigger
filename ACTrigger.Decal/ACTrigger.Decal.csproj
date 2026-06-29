@@ -21,9 +21,6 @@
       <HintPath>lib\Decal.FileService.dll</HintPath>
     </Reference>
 
-    <Reference Include="Decal">
-      <HintPath>lib\Decal.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>
