@@ -163,7 +163,7 @@ The repository contains both the standalone UI application and the Decal plugin 
 
 # Version
 
-Current release: **v0.9.0**
+Current release: **v0.9.5**
 
 This is the first public release. Additional features, improvements, and quality-of-life enhancements are planned as the project continues to evolve.
 
