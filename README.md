@@ -28,6 +28,16 @@ The main application allows you to configure triggers, choose sounds, manage ove
 
 ---
 
+# HUD Nameplates
+
+ACTrigger can display customizable in-game HUD nameplates above players, monsters, NPCs, vendors, portals, and pets. Nameplates include useful information such as player levels and monarch tags while using intelligent caching to minimize performance impact.
+
+HUDs are generated automatically as new objects are encountered and can be customized with different fonts to better match your preferred interface.
+
+![HUD Nameplates](Screenshots/ACTrigger-Huds.png)
+
+---
+
 # Combat Overlays
 
 ## Outgoing Damage
