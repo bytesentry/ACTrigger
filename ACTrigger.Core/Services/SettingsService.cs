@@ -41,13 +41,16 @@ public class SettingsService
                 PropertyNameCaseInsensitive = true
             });
 
-        //Console.WriteLine($"Settings object null? {settings == null}");
-
-        if (settings != null)
+        if (settings == null)
         {
-            //Console.WriteLine($"Settings.LogPath = '{settings.LogPath}'");
+            settings = new Settings();
         }
 
-        return settings ?? new Settings();
+        if (string.IsNullOrWhiteSpace(settings.HudFont))
+        {
+            settings.HudFont = "Palatino Linotype";
+        }
+
+        return settings;
     }
 }

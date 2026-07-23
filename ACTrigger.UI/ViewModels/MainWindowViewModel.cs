@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using System.Threading.Tasks;
+using System.Threading;
 using System.IO;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
@@ -16,15 +17,36 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using ACTrigger.UI.Models;
+using ACTrigger.UI.Rendering;
+using System.Diagnostics;
+using Avalonia.Media;
 
 namespace ACTrigger.UI.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private bool _initializing;
     private readonly SoundService _soundService = new();
     private readonly TriggerService _triggerService = new();
     private readonly SettingsService _settingsService = new();
     private readonly TriggerConfigService _triggerConfigService = new();  
+    private readonly SemaphoreSlim _nameplateGenerationSemaphore = new SemaphoreSlim(1, 1);
+    private readonly Dictionary<string, string> _hudSignatures = new();
+
+    private readonly Avalonia.Threading.DispatcherTimer _animationTimer =
+        new()
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+
+    private readonly Avalonia.Threading.DispatcherTimer _memoryTimer =
+        new()
+        {
+            Interval = TimeSpan.FromMinutes(1)
+        };
+
+    //// test variable
+
     [ObservableProperty]
     private bool showEventLog;
 
@@ -51,6 +73,11 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<CombatText> KillCombatTexts { get; } = new();
 
     public ObservableCollection<TrackedDebuff> TrackedDebuffs { get; } = new();
+
+    public ObservableCollection<string> AvailableHudFonts { get; } = new();
+
+    [ObservableProperty]
+    private string _selectedHudFont = string.Empty;
 
     private double _debuffScale = 1.0;
 
@@ -386,13 +413,6 @@ public partial class MainWindowViewModel : ViewModelBase
             ["Light Weapon Ineptitude"] = "Light",
             ["Two Handed Combat Ineptitude"] = "Two-Handed",
 
-            // Skill VII combat versions
-            ["Missile Weapon Mastery Other"] = "Missile",
-            ["Finesse Weapon Mastery Other"] = "Finesse",
-            ["Heavy Weapon Mastery Other"] = "Heavy",
-            ["Light Weapon Mastery Other"] = "Light",
-            ["Two Handed Mastery Other"] = "Two-Handed",
-
             // Defenses
             ["Futility"] = "Magic Defense",
             ["Magic Yield"] = "Magic Defense",
@@ -462,6 +482,57 @@ public partial class MainWindowViewModel : ViewModelBase
     */
     private int _killBurstIndex;
 
+    partial void OnOverlayEnabledChanged(bool value)
+    {
+        if (!value)
+        {
+            OutgoingCombatTexts.Clear();
+            IncomingCombatTexts.Clear();
+        }
+
+        if (!_initializing)
+        {
+            SaveOverlaySettings();
+        }
+        UpdateAnimationTimer();
+    }
+
+    partial void OnShowDamageOutChanged(bool value)
+    {
+        if (!value)
+        {
+            OutgoingCombatTexts.Clear();
+        }
+
+        if (!_initializing)
+        {
+            SaveOverlaySettings();
+        }
+
+        UpdateAnimationTimer();
+    }
+
+    partial void OnShowDamageInChanged(bool value)
+    {
+        if (!value)
+        {
+            IncomingCombatTexts.Clear();
+        }
+
+        if (!_initializing)
+        {
+            SaveOverlaySettings();
+        }
+        UpdateAnimationTimer();
+    }
+
+    partial void OnSelectedHudFontChanged(string value)
+    {
+        NameplateGenerator.FontName = value;
+            
+        SaveSettings();
+    }
+
     private readonly List<PendingDebuff> _pendingDebuffs = new();
 
     [RelayCommand]
@@ -522,51 +593,50 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void SaveSettings()
     {
-        var settings =
-            _settingsService.Load();
+        var settings = _settingsService.Load();
+            
+        settings.LogPath = LogPath;
+            
+        settings.OverlayEnabled = OverlayEnabled;
+            
+        settings.ShowDamageOut = ShowDamageOut;
+            
+        settings.ShowDamageIn = ShowDamageIn;
+            
+        settings.ShowDebuffs = ShowDebuffs;
+            
+        settings.AllowTargeting = AllowTargeting;
+            
+        settings.EditOverlayLayout = EditOverlayLayout;
+            
+        settings.HudFont = SelectedHudFont;
 
-        settings.LogPath =
-            LogPath;
-
-        settings.OverlayEnabled =
-            OverlayEnabled;
-
-        settings.ShowDamageOut =
-            ShowDamageOut;
-
-        settings.ShowDamageIn =
-            ShowDamageIn;
-
-        settings.ShowDebuffs =
-            ShowDebuffs;
-
-        settings.AllowTargeting =
-            AllowTargeting;
-
-        settings.EditOverlayLayout =
-            EditOverlayLayout;
-
-        _settingsService.Save(
-            settings);
+        _settingsService.Save(settings);
     }
 
     private bool _showDebuffs = false;
-        public bool ShowDebuffs
+    
+    public bool ShowDebuffs
+    {
+        get => _showDebuffs;
+        set
         {
-            get => _showDebuffs;
-            set
+            if (_showDebuffs == value)
+                return;
+
+            _showDebuffs = value;
+            OnPropertyChanged();
+
+            if (!_initializing)
             {
-                if (_showDebuffs == value)
-                    return;
-
-                _showDebuffs = value;
-                OnPropertyChanged();
-
                 SaveSettings();
             }
-        }
 
-        private bool _allowTargeting = false;
+            UpdateAnimationTimer();
+        }
+    }
+
+    private bool _allowTargeting = false;
         public bool AllowTargeting
         {
             get => _allowTargeting;
@@ -600,6 +670,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        _initializing = true;
+
         var settings = _settingsService.Load();
 
         OverlayEnabled =
@@ -624,7 +696,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var triggerConfig =
             _triggerConfigService.Load();
-        
+
+        AvailableHudFonts.Clear();
+
+        AvailableHudFonts.Add("Palatino Linotype");
+
+        foreach (var name in FontManager.Current.SystemFonts
+                    .Select(f => f.Name)
+                    .OrderBy(n => n))
+        {
+            if (name != "Palatino Linotype")
+            {
+                AvailableHudFonts.Add(name);
+            }
+        }
+        //Console.WriteLine($"HudFont from settings = '{settings.HudFont}'");
+        SelectedHudFont = settings.HudFont;
+        NameplateGenerator.FontName = SelectedHudFont;
+   
         foreach (var trigger in triggerConfig.Triggers)
         {
             trigger.PropertyChanged += Trigger_PropertyChanged;
@@ -639,36 +728,63 @@ public partial class MainWindowViewModel : ViewModelBase
         _triggerService.TriggerMatched += OnTriggerMatched;
         StartLogWatcher();
 
-        var timer =
-            new Avalonia.Threading.DispatcherTimer
-            {
-                Interval =
-                    TimeSpan.FromMilliseconds(16)
-            };
-
-        timer.Tick +=
+        _animationTimer.Tick +=
             (_, _) => UpdateCombatTextAnimations();
 
-        timer.Start();
+        UpdateAnimationTimer();
+
+        /*
+        //debug performance
+        _memoryTimer.Tick += (_, _) =>
+        {
+            var process = Process.GetCurrentProcess();
+
+            Console.WriteLine(
+                $"Memory: WS={process.WorkingSet64 / 1024 / 1024}MB " +
+                $"Private={process.PrivateMemorySize64 / 1024 / 1024}MB " +
+                $"Threads={process.Threads.Count} " +
+                $"Anim={_animationTimer.IsEnabled} " +
+                $"Out={OutgoingCombatTexts.Count} " +
+                $"In={IncomingCombatTexts.Count} " +
+                $"Debuffs={TrackedDebuffs.Count}");
+        };
+
+        _memoryTimer.Start();
+        */
+
+        _initializing = false;
     }
 
     private void UpdateCombatTextAnimations()
     {
-        UpdateCollection(
-            OutgoingCombatTexts,
-            false);
-
-        UpdateCollection(
-            IncomingCombatTexts,
-            true);
-
-        //UpdateCollection(
-        //    KillCombatTexts,
-        //    false);
-
-        foreach (var debuff in TrackedDebuffs)
+        if (!OverlayEnabled)
         {
-            debuff.RefreshTimer();
+            return;
+        }
+
+        if (ShowDamageOut &&
+            OutgoingCombatTexts.Count > 0)
+        {
+            UpdateCollection(
+                OutgoingCombatTexts,
+                false);
+        }
+
+        if (ShowDamageIn &&
+            IncomingCombatTexts.Count > 0)
+        {
+            UpdateCollection(
+                IncomingCombatTexts,
+                true);
+        }
+
+        if (ShowDebuffs &&
+            TrackedDebuffs.Count > 0)
+        {
+            foreach (var debuff in TrackedDebuffs)
+            {
+                debuff.RefreshTimer();
+            }
         }
     }
 
@@ -894,23 +1010,6 @@ public partial class MainWindowViewModel : ViewModelBase
         SaveTriggers();
     }
 
-    partial void OnOverlayEnabledChanged(bool value)
-    {
-        SaveOverlaySettings();
-    }
-
-    partial void OnShowDamageOutChanged(bool value)
-    {
-
-        SaveOverlaySettings();
-    }
-
-    partial void OnShowDamageInChanged(bool value)
-    {
-
-        SaveOverlaySettings();
-    }
-
     partial void OnEditOverlayLayoutChanged(bool value)
     {
         SaveOverlaySettings();
@@ -954,7 +1053,13 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             _watcher = new LogWatcher();
 
-            _watcher.LogEntryReceived += OnLogEntry;
+            _watcher.LogEntryReceived +=
+            entry =>
+            {
+                Avalonia.Threading.Dispatcher
+                    .UIThread
+                    .Post(() => OnLogEntry(entry));
+            };
 
             await _watcher.StartAsync(
                 GetLogFilePath());
@@ -988,279 +1093,326 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnLogEntry(LogEntry entry)
     {
-        // checking whether session active via log entries
-        _triggerService.Check(entry);
-
-        string text = entry.Message;
-
-        if (entry.Channel == "System" &&
-            text == "ACTrigger started")
+        try
         {
-            Console.WriteLine("SESSION ACTIVE");
-            _sessionActive = true;
-            OnPropertyChanged(nameof(SessionActive));
-        }
+            // checking whether session active via log entries
+            _triggerService.Check(entry);
 
-        if (entry.Channel == "System" &&
-            text == "ACTrigger stopped")
-        {
-            Console.WriteLine("SESSION ENDED");
-            _sessionActive = false;
-            OnPropertyChanged(nameof(SessionActive));
+            string channel = entry.Channel;
+            string text = entry.Message;
 
-            ClearAllDebuffs();
+            bool isCombat = channel == "Combat";
+                
+            bool processCombat = ShowDamageOut || ShowDamageIn;
 
-            return;
-        }
-
-        if (entry.Channel == "PortalComplete")
-        {
-            ClearAllDebuffs();
-            return;
-        }
-
-        string originalText = text;
-
-        bool incomingDebuff =
-            entry.Channel == "Enchant" &&
-            text.StartsWith(
-                "Add |",
-                StringComparison.OrdinalIgnoreCase) &&
-            IsDebuff(
-                text);
-
-        var rng = Random.Shared;
-
-        string? incomingDamageValue = null;
-
-        string? outgoingMagicValue = null;
-
-        string? healingValue = null;
-
-        if (entry.Channel == "DebuffCast")
-        {
-            ProcessDebuffCast(entry.Message);
-            return;
-        }
-
-        if (
-            entry.Channel == "Combat" &&
-            text.StartsWith(
-                "You cast ",
-                StringComparison.Ordinal) &&
-            text.Contains(
-                " on ",
-                StringComparison.Ordinal))
-        {
-            ProcessSuccessfulDebuff(text);
-        }
-
-        //checks for verified release, making sure obj dead or gone
-        if (entry.Channel == "ReleaseVerified")
-        {
-            ProcessReleaseObject(entry.Message);
-            return;
-        }
-
-        if (entry.Channel == "Combat")
-        {
-            incomingDamageValue =
-                ExtractValue(
-                    text,
-                    IncomingDamagePatterns);
-
-            outgoingMagicValue =
-                ExtractValue(
-                    text,
-                    OutgoingMagicPatterns);
-
-            healingValue =
-                ExtractValue(
-                    text,
-                    HealingPatterns);
-        }
-        //make sure no +0 heal spam
-        if (int.TryParse(
-                healingValue,
-                out int healAmount) &&
-            healAmount <= 0)
-        {
-            return;
-        }
-
-        if (entry.Channel == "EnchantRaw")
-        {
-            var match =
-                Regex.Match(
-                    text,
-                    @"Adjustment=([-+]?\d+(\.\d+)?)");
-
-            if (match.Success)
+            if (entry.Channel == "HudRequest")
             {
-                _lastEnchantAdjustment =
-                    double.Parse(
-                        match.Groups[1].Value,
-                        CultureInfo.InvariantCulture);
+                _ = HandleHudRequest(entry.Message);
+                return;
             }
 
-            return;
-        }
 
-        if (entry.Channel == "Enchant" &&
-            text.StartsWith("Add |"))
-        {
-            var match =
-                Regex.Match(
-                    text,
-                    @"Name=([^|]+)");
-
-            if (match.Success)
+            if (channel == "System")
             {
-                string spellName =
-                    match.Groups[1]
-                        .Value
-                        .Trim();
 
-                string? stat =
-                    TranslateDebuff(
-                        spellName);
-                
-
-                if (stat != null)
+                if (text == "ACTrigger started")
                 {
-                    //Console.WriteLine(
-                    //    $"DISPLAYING DEBUFF [{stat}]");
+                    Console.WriteLine("SESSION ACTIVE");
+                    _sessionActive = true;
+                    OnPropertyChanged(nameof(SessionActive));
+                    return;
+                }
 
-                    AddStatusText(
-                        $"- {stat}",
-                        "#FF7777");
+                if (text == "ACTrigger stopped")
+                {
+                    Console.WriteLine("SESSION ENDED");
+                    _sessionActive = false;
+                    OnPropertyChanged(nameof(SessionActive));
 
-                    _lastEnchantAdjustment =
-                        null;
+                    _hudSignatures.Clear();
 
+                    ClearAllDebuffs();
                     return;
                 }
             }
-        }
 
-        bool kill =
-            KillPatterns.Any(
-                pattern =>
-                    pattern.IsMatch(text));
+            if (entry.Channel == "PortalComplete")
+            {
+                ClearAllDebuffs();
+                return;
+            }
 
-        if (kill)
-        {
+            string originalText = text;
+
+            bool incomingDebuff =
+                entry.Channel == "Enchant" &&
+                text.StartsWith(
+                    "Add |",
+                    StringComparison.OrdinalIgnoreCase) &&
+                IsDebuff(
+                    text);
+
+            string? incomingDamageValue = null;
+
+            string? outgoingMagicValue = null;
+
+            string? healingValue = null;
+
+            if (entry.Channel == "DebuffCast")
+            {
+                if (ShowDebuffs)
+                {
+                    ProcessDebuffCast(entry.Message);
+                }
+
+                return;
+            }
+
+            if (isCombat &&
+                    text.StartsWith(
+                    "You cast ",
+                    StringComparison.Ordinal) &&
+                text.Contains(
+                    " on ",
+                    StringComparison.Ordinal))
+            {
+                ProcessSuccessfulDebuff(text);
+            }
+
+            //checks for verified release, making sure obj dead or gone
+            if (entry.Channel == "ReleaseVerified")
+            {
+                ProcessReleaseObject(entry.Message);
+                return;
+            }
+
+            if (isCombat)
+            {
+                if (processCombat)
+                {
+                    incomingDamageValue =
+                        ExtractValue(
+                            text,
+                            IncomingDamagePatterns);
+
+                    outgoingMagicValue =
+                        ExtractValue(
+                            text,
+                            OutgoingMagicPatterns);
+
+                    healingValue =
+                        ExtractValue(
+                            text,
+                            HealingPatterns);
+                }
+            }
+
+            //make sure no +0 heal spam
+            if (int.TryParse(
+                    healingValue,
+                    out int healAmount) &&
+                healAmount <= 0)
+            {
+                return;
+            }
+
+            if (entry.Channel == "EnchantRaw")
+            {
+                var match =
+                    Regex.Match(
+                        text,
+                        @"Adjustment=([-+]?\d+(\.\d+)?)");
+
+                if (match.Success)
+                {
+                    _lastEnchantAdjustment =
+                        double.Parse(
+                            match.Groups[1].Value,
+                            CultureInfo.InvariantCulture);
+                }
+
+                return;
+            }
+
+            if (entry.Channel == "Enchant" &&
+                text.StartsWith("Add |"))
+            {
+                var match =
+                    Regex.Match(
+                        text,
+                        @"Name=([^|]+)");
+
+                if (match.Success)
+                {
+                    string spellName =
+                        match.Groups[1]
+                            .Value
+                            .Trim();
+
+                    string? stat =
+                        TranslateDebuff(
+                            spellName);
+                    
+
+                    if (stat != null)
+                    {
+                        //Console.WriteLine(
+                        //    $"DISPLAYING DEBUFF [{stat}]");
+
+                        AddStatusText(
+                            $"- {stat}",
+                            "#FF7777");
+
+                        _lastEnchantAdjustment =
+                            null;
+
+                        return;
+                    }
+                }
+            }
+
+            bool kill =
+                KillPatterns.Any(
+                    pattern =>
+                        pattern.IsMatch(text));
+
+            if (kill)
+            {
+                
+                AddKillText(
+                    entry.Timestamp);
+
+                return;
+            }
             
-            AddKillText(
-                entry.Timestamp);
 
-            return;
-        }
+            string display = "";
+
+            if (healingValue != null)
+            {
+                display = "+" + healingValue;             
+            }
+            else if (incomingDamageValue != null)
+            {
+                display =
+                    incomingDamageValue;
+            }
+            else if (outgoingMagicValue != null)
+            {
+                display =
+                    outgoingMagicValue;
+
+                text =
+                    $"You spell-hit for {outgoingMagicValue}";
+            }
+
+            if (healingValue != null)
+            {
+                if (OverlayEnabled && ShowDamageIn)
+                {
+                    AddIncomingText(
+                        "+" + healingValue,
+                        "#66FF66",
+                        entry.Timestamp);
+                }
+
+                return;
+            }
+
+            if (incomingDamageValue != null)
+            {
+                if (OverlayEnabled && ShowDamageIn)
+                {
+                    AddIncomingText(
+                        incomingDamageValue,
+                        "#FFFFFF",
+                        entry.Timestamp);
+                }
+
+                return;
+            }
+            
+            if (!kill &&
+                entry.Channel != "Combat")
+            {
+                return;
+            }
+
+            
+
+            bool outgoing =
+                Regex.IsMatch(
+                    text,
+                    @"^(Critical hit!\s+)?(Sneak Attack!\s+)?(Recklessness!\s+)?You .* for \d+ point");
+
         
 
-        string display = "";
+            if (outgoingMagicValue != null)
+            {
+                outgoing = true;
+            }
+            
+            string color;
 
-        if (healingValue != null)
-        {
-            display = "+" + healingValue;             
+            if (text.Contains("Critical hit!"))
+            {
+                color = "#FF9C00";
+            }
+            else if (outgoing)
+            {
+                color = "#FFE45C";
+            }
+            else
+            {
+                color = "#FFFFFF";
+            }
+
+            if (!outgoing &&
+                incomingDamageValue == null &&
+                healingValue == null)
+            {
+                return;
+            }
+
+            bool critical =
+                originalText.Contains(
+                    "Critical hit!",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (outgoing)
+            {
+                if (OverlayEnabled &&
+                    ShowDamageOut)
+                {
+                    Console.WriteLine(
+                        $"Overlay={OverlayEnabled} Out={ShowDamageOut} In={ShowDamageIn}");
+                    AddOutgoingText(
+                        display,
+                        color,
+                        entry.Timestamp,
+                        critical);
+                }
+            }
+            else
+            {
+                if (OverlayEnabled && ShowDamageIn) 
+                {
+                    AddIncomingText(
+                        display,
+                        color,
+                        entry.Timestamp,
+                        critical);
+                }
+            }
         }
-        else if (incomingDamageValue != null)
+        catch (Exception ex)
         {
-            display =
-                incomingDamageValue;
-        }
-        else if (outgoingMagicValue != null)
-        {
-            display =
-                outgoingMagicValue;
+            RecentEvents.Insert(
+                0,
+                $"OnLogEntry ERROR: {ex.Message}");
 
-            text =
-                $"You spell-hit for {outgoingMagicValue}";
-        }
-
-        if (healingValue != null)
-        {
-            AddIncomingText(
-                "+" + healingValue,
-                "#66FF66",
-                entry.Timestamp);
-
-            return;
-        }
-
-        if (incomingDamageValue != null)
-        {
-            AddIncomingText(
-                incomingDamageValue,
-                "#FFFFFF",
-                entry.Timestamp);
-
-            return;
-        }
-        
-        if (!kill &&
-            entry.Channel != "Combat")
-        {
-            return;
-        }
-
-        
-
-        bool outgoing =
-            Regex.IsMatch(
-                text,
-                @"^(Critical hit!\s+)?(Sneak Attack!\s+)?(Recklessness!\s+)?You .* for \d+ point");
-
-       
-
-        if (outgoingMagicValue != null)
-        {
-            outgoing = true;
-        }
-        
-        string color;
-
-        if (text.Contains("Critical hit!"))
-        {
-            color = "#FF9C00";
-        }
-        else if (outgoing)
-        {
-            color = "#FFE45C";
-        }
-        else
-        {
-            color = "#FFFFFF";
-        }
-
-        if (!outgoing &&
-            incomingDamageValue == null &&
-            healingValue == null)
-        {
-            return;
-        }
-
-        bool critical =
-            originalText.Contains(
-                "Critical hit!",
-                StringComparison.OrdinalIgnoreCase);
-
-        if (outgoing)
-        {
-            AddOutgoingText(
-                display,
-                color,
-                entry.Timestamp,
-                critical);
-        }
-        else
-        {
-            AddIncomingText(
-                display,
-                color,
-                entry.Timestamp,
-                critical);
-        }
+            Console.WriteLine(ex);
+        }     
     }
     
     [RelayCommand]
@@ -1290,7 +1442,10 @@ public partial class MainWindowViewModel : ViewModelBase
         DateTime timestamp,
         bool critical = false)
     {
-       
+       //test
+       Console.WriteLine("AddIncomingText()");
+       //test
+
         var rng = Random.Shared;
 
         var combatText =
@@ -1360,7 +1515,6 @@ public partial class MainWindowViewModel : ViewModelBase
         DateTime timestamp,
         bool critical = false)
     {
-       
         var rng = Random.Shared;
 
         var combatText =
@@ -1405,23 +1559,22 @@ public partial class MainWindowViewModel : ViewModelBase
                 250,
                 280);
 
-        combatText.Y +=
-            YOffsets[slot];
+        combatText.Y += YOffsets[slot];
+            
+        combatText.SpawnX = combatText.X;
 
-        combatText.SpawnX =
-            combatText.X;
-
-        combatText.SpawnY =
-            combatText.Y;
-
-
-        OutgoingCombatTexts.Add(
-            combatText);
+        combatText.SpawnY = combatText.Y;
+            
+        OutgoingCombatTexts.Add(combatText);
     }
 
-    private void AddKillText(
-        DateTime timestamp)
+    private void AddKillText(DateTime timestamp)
     {        
+        if (!OverlayEnabled || !ShowDamageOut)
+        {
+            return;
+        }
+
         var killText =
             new CombatText
             {
@@ -1486,9 +1639,6 @@ public partial class MainWindowViewModel : ViewModelBase
                 $@"\b{Regex.Escape(kvp.Key)}\b",
                 RegexOptions.IgnoreCase))
             {
-                //Console.WriteLine(
-                //    $"MATCH [{kvp.Key}] -> [{kvp.Value}]");
-
                 return kvp.Value;
             }
         }
@@ -1501,6 +1651,12 @@ public partial class MainWindowViewModel : ViewModelBase
         string text,
         string color)
     {
+        if (!OverlayEnabled ||
+            !ShowDamageIn)
+        {
+            return;
+        }
+        
         IncomingCombatTexts.Add(
             new CombatText
             {
@@ -1719,4 +1875,225 @@ public partial class MainWindowViewModel : ViewModelBase
             pending);
     }
 
+    private void UpdateAnimationTimer()
+    {
+        bool shouldRun =
+            OverlayEnabled &&
+            (
+                ShowDamageOut ||
+                ShowDamageIn ||
+                ShowDebuffs
+            );
+
+        if (shouldRun)
+        {
+            if (!_animationTimer.IsEnabled)
+            {
+                _animationTimer.Start();
+            }
+        }
+        else
+        {
+            if (_animationTimer.IsEnabled)
+            {
+                _animationTimer.Stop();
+            }
+        }
+    }
+
+    private async Task HandleHudRequest(string message)
+    {
+        await _nameplateGenerationSemaphore.WaitAsync();
+
+        try
+        {
+            string[] parts = message.Split('|');
+
+            if (parts.Length < 6)
+                return;
+
+            string objectId = parts[0];
+            string server = parts[1];
+            string objectType = parts[2];
+
+            string originalName = parts[3];
+            string name = originalName;
+
+            int.TryParse(parts[4], out int level);
+
+            string monarch = parts[5];
+
+            //Console.WriteLine($"HUD REQUEST {objectType} {name}");
+
+            HudType hudType =
+                Enum.Parse<HudType>(
+                    objectType.Trim(),
+                    ignoreCase: true);
+
+            HudStyle style = HudStyle.Default;
+
+            HudClassifier.Classify(
+                ref hudType,
+                ref style,
+                ref name,
+                ref level,
+                ref monarch);
+
+            //Console.WriteLine(
+            //    $"{DateTime.Now:HH:mm:ss.fff} REQUEST {hudType}/{name} ({level}) <{monarch}>");;
+
+            string playerFile =
+                await NameplateGenerator.GenerateAsync(
+                    name,
+                    hudType,
+                    hudType,
+                    style,
+                    server,
+                    LogPath);
+
+            string? levelFile = null;
+
+            if (level > 0)
+            {
+                levelFile =
+                    await NameplateGenerator.GenerateAsync(
+                        level.ToString(),
+                        HudType.Level,
+                        hudType,
+                        style,
+                        server,
+                        LogPath);
+            }
+
+            string? tagFile = null;
+
+            if (!string.IsNullOrWhiteSpace(monarch))
+            {
+                tagFile =
+                    await NameplateGenerator.GenerateAsync(
+                        monarch,
+                        HudType.Tag,
+                        hudType,
+                        style,
+                        server,
+                        LogPath);
+            }
+
+            var elements = new List<HudElement>
+            {
+                new HudElement
+                {
+                    FileName = playerFile,
+                    Row = 0,
+                    Order = 0
+                }
+            };
+
+            if (levelFile != null)
+            {
+                elements.Add(
+                    new HudElement
+                    {
+                        FileName = levelFile,
+                        Row = 0,
+                        Order = 1
+                    });
+            }
+
+            if (tagFile != null)
+            {
+                elements.Add(
+                    new HudElement
+                    {
+                        FileName = tagFile,
+                        Row = 1,
+                        Order = 0
+                    });
+            }
+
+            string hudFolder = Path.Combine(
+                LogPath,
+                "Assets",
+                "Cache",
+                server,
+                "HUD",
+                hudType.ToString());
+
+            Directory.CreateDirectory(hudFolder);
+
+            string outputFile = Path.Combine(
+                hudFolder,
+                $"{name}.png");
+
+            if (hudType == HudType.Pet)
+            {
+                outputFile = Path.Combine(
+                    hudFolder,
+                    MakeSafeFilename(originalName) + ".png");
+            }
+
+            //Console.WriteLine(
+            //    $"{DateTime.Now:HH:mm:ss.fff} COMPOSE START {hudType}/{name}");;
+
+            string signature = $"{originalName}|{level}|{monarch}";
+
+            string signatureFile = Path.ChangeExtension(outputFile,".hud");
+
+            //compare hud file
+            string key = $"{server}|{hudType}|{originalName}";
+                
+            string? previous = null;
+
+            if (!_hudSignatures.TryGetValue(key, out previous) &&
+                File.Exists(signatureFile))
+            {
+                previous = File.ReadAllText(signatureFile);
+                _hudSignatures[key] = previous;
+            }
+
+            if (previous == signature &&
+                File.Exists(outputFile))
+            {
+                return;
+            }
+
+            //keep for now
+            Console.WriteLine($"COMPOSE {outputFile}");
+
+            var (width, height) =
+                HudComposer.Compose(
+                    elements,
+                    outputFile);
+
+            //Console.WriteLine(
+            //   $"{DateTime.Now:HH:mm:ss.fff} COMPOSE DONE {hudType}/{name}");
+
+            File.WriteAllText(
+                signatureFile,
+                $"{signature}\n{width}|{height}");
+
+            _hudSignatures[key] = signature;
+
+        }
+        catch (Exception ex)
+        {
+            
+            Console.WriteLine(ex.ToString());
+        }
+        finally
+        {
+            _nameplateGenerationSemaphore.Release();
+        }
+    }
+    private static string MakeSafeFilename(string? name)
+    {
+        name ??= "";
+
+        foreach (char c in Path.GetInvalidFileNameChars())
+        {
+            name = name.Replace(c, '_');
+        }
+
+        return name;
+    }
 }

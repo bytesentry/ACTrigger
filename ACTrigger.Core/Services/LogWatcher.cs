@@ -20,28 +20,40 @@ public class LogWatcher
             position = initStream.Length;
         }
 
+        FileStream stream = new(
+            logFile,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite);
+
+        StreamReader reader = new(stream);
+
+        stream.Seek(
+            position,
+            SeekOrigin.Begin);
+
         while (true)
         {
             try
             {
-                using var stream = new FileStream(
-                    logFile,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.ReadWrite);
-                    
-                    if (position > stream.Length)
-                    {
-                        Console.WriteLine("Log was recreated. Restarting at beginning.");
-                        position = 0;
-                    
-                    }
-                    stream.Seek(
-                    position,
-                    SeekOrigin.Begin);
+                if (position > stream.Length)
+                {
+                    Console.WriteLine(
+                        "Log was recreated. Restarting at beginning.");
 
-                using var reader =
-                    new StreamReader(stream);
+                    reader.Dispose();
+                    stream.Dispose();
+
+                    stream = new FileStream(
+                        logFile,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.ReadWrite);
+
+                    reader = new StreamReader(stream);
+
+                    position = 0;
+                }
 
                 string? line;
 
@@ -52,20 +64,42 @@ public class LogWatcher
 
                     if (entry != null)
                     {
-                        LogEntryReceived?.Invoke(entry);
+                        try
+                        {
+                            LogEntryReceived?.Invoke(entry);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(
+                                $"LOG ENTRY ERROR: {ex}");
+                        }
                     }
                 }
 
-                position =
-                    stream.Position;
+                position = stream.Position;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(
                     $"LOGWATCHER ERROR: {ex.Message}");
+
+                reader.Dispose();
+                stream.Dispose();
+
+                stream = new FileStream(
+                    logFile,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite);
+
+                reader = new StreamReader(stream);
+
+                stream.Seek(
+                    position,
+                    SeekOrigin.Begin);
             }
 
-            await Task.Delay(10);
+            await Task.Delay(50);
         }
     }
 }

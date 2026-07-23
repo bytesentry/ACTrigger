@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using System.Linq;
+using System;
 
 namespace ACTrigger.Decal
 {
@@ -96,6 +97,98 @@ namespace ACTrigger.Decal
             return CombatPatterns.Any(
                 pattern =>
                     pattern.IsMatch(text));
+        }
+
+        private static readonly Regex[] OutgoingDamagePatterns =
+        {
+            // Physical / missile / elemental weapon damage
+            new(
+                @"^Critical hit!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
+                RegexOptions.IgnoreCase),
+
+            new(
+                @"^You \w+ .* for (\d+) point.* of .+ damage.*$",
+                RegexOptions.IgnoreCase),
+
+            new(
+                @"^Critical hit!\s+Sneak Attack!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
+                RegexOptions.IgnoreCase),
+
+            new(
+                @"^Sneak Attack!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
+                RegexOptions.IgnoreCase),
+
+            new(
+                @"^Sneak Attack!\s+Recklessness!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
+                RegexOptions.IgnoreCase),
+
+            new(
+                @"^Recklessness!\s+You \w+ .* for (\d+) point.* of .+ damage.*$",
+                RegexOptions.IgnoreCase),
+
+            // Spell damage
+            new(
+                @"^Critical hit!\s+You .+ for (\d+) point.* with .+\.$",
+                RegexOptions.IgnoreCase),
+
+            new(
+                @"^You .+ for (\d+) point.* with .+\.$",
+                RegexOptions.IgnoreCase)
+        };
+
+        private static readonly Regex[] OutgoingActivityPatterns =
+        {
+            // Monster evaded your attack.
+            new(
+                @"^(?<targetname>.+) evaded your attack\.$",
+                RegexOptions.IgnoreCase),
+
+            // Monster resists your spell
+            new(
+                @"^(?<targetname>.+) resists your spell$",
+                RegexOptions.IgnoreCase),
+
+            // Your missile/spell/etc. hit the environment.
+            new(
+                @"^Your .+ hit the environment\.$",
+                RegexOptions.IgnoreCase)
+        };
+
+        public static bool TryGetOutgoingDamage(
+            string text,
+            out int damage,
+            out bool critical)
+        {
+            foreach (Regex regex in OutgoingDamagePatterns)
+            {
+                Match match = regex.Match(text);
+
+                if (match.Success)
+                {
+                    damage = int.Parse(match.Groups[1].Value);
+                    critical = text.StartsWith(
+                        "Critical hit!",
+                        System.StringComparison.OrdinalIgnoreCase);
+
+                    return true;
+                }
+            }
+
+            damage = 0;
+            critical = false;
+            return false;
+        }
+
+        public static bool IsOutgoingCombatActivity(
+            string text)
+        {
+            foreach (Regex regex in OutgoingActivityPatterns)
+            {
+                if (regex.IsMatch(text))
+                    return true;
+            }
+
+            return false;
         }
         
     }

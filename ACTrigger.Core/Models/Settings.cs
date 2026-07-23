@@ -23,4 +23,6 @@ public class Settings
     public bool ShowDebuffs { get; set; } = false;
 
     public bool AllowTargeting { get; set; } = false;
+
+    public string HudFont { get; set; } = "Palatino Linotype";
 }

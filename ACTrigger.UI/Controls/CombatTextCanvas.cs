@@ -131,7 +131,7 @@ public class CombatTextCanvas
                     text.Text,
                     System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight,
-                    TextRenderer.VikingTypeface,
+                    TextRenderer.PalatinoTypeface,
                     text.FontSize,
                     brush);
 
@@ -162,7 +162,7 @@ public class CombatTextCanvas
                     text.Text,
                     System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight,
-                    TextRenderer.VikingTypeface,
+                    TextRenderer.PalatinoTypeface,
                     text.FontSize,
                     outlineBrush);
 
@@ -176,7 +176,7 @@ public class CombatTextCanvas
             TextRenderer.DrawOutlinedText(
                 context,
                 text.Text,
-                TextRenderer.VikingTypeface,
+                TextRenderer.PalatinoTypeface,
                 text.FontSize,
                 brush,
                 outlineBrush,
@@ -188,9 +188,9 @@ public class CombatTextCanvas
 
 public static class TextRenderer
 {
-    public static readonly Typeface VikingTypeface =
+    public static readonly Typeface PalatinoTypeface = //Typeface VikingTypeface =
             new(
-                new FontFamily("avares://ACTrigger.UI/Assets/Fonts#Viking-Normal"),
+                new FontFamily("Palatino Linotype"),//("avares://ACTrigger.UI/Assets/Fonts#Viking-Normal"),
                 FontStyle.Normal,
                 FontWeight.Bold);
 

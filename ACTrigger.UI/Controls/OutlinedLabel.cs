@@ -43,6 +43,17 @@ public class OutlinedLabel : Control
             nameof(FontSize),
             18);
 
+    public static readonly StyledProperty<FontFamily> FontFamilyProperty =
+        AvaloniaProperty.Register<OutlinedLabel, FontFamily>(
+            nameof(FontFamily),
+            new FontFamily("Times New Roman"));
+
+    public FontFamily FontFamily
+    {
+        get => GetValue(FontFamilyProperty);
+        set => SetValue(FontFamilyProperty, value);
+    }
+
     public string? Text
     {
         get => GetValue(TextProperty);
@@ -77,7 +88,7 @@ public class OutlinedLabel : Control
         base.Render(context);
 
         var typeface = new Typeface(
-            new FontFamily("Times New Roman"),
+            FontFamily,
             FontStyle.Normal,
             FontWeight.Bold);
 
@@ -98,7 +109,7 @@ public class OutlinedLabel : Control
             System.Globalization.CultureInfo.InvariantCulture,
             FlowDirection.LeftToRight,
             new Typeface(
-                new FontFamily("Times New Roman"),
+                FontFamily,
                 FontStyle.Normal,
                 FontWeight.Bold),
             FontSize,
