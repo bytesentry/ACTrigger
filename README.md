@@ -10,11 +10,13 @@ Designed to work alongside Decal rather than replace it, ACTrigger focuses on pr
 
 # Features
 
+- **Customizable in-game HUD nameplates** for players, monsters, NPCs, vendors, portals, and pets.
 - **Real-time sound triggers** using regular expressions.
 - **Incoming and outgoing scrolling combat text.**
+- **In-game DPS meter.**
 - **Debuff tracking** for your target.
 - **Click-to-target debuff overlay** for quickly reselecting previously affected monsters.
-- Configurable overlay positions.
+- Configurable overlay positions and HUD fonts.
 - Windows and Linux support through **Avalonia UI**.
 - Lightweight Decal plugin for real-time combat event capture.
 
